@@ -1,0 +1,181 @@
+" Plugins add using vim-Plug
+
+call plug#begin()
+
+Plug 'preservim/nerdtree'
+Plug 'itchyny/lightline.vim'
+Plug 'nordtheme/vim'
+Plug 'prabirshrestha/vim-lsp'
+Plug 'mattn/vim-lsp-settings'
+Plug 'prabirshrestha/asyncomplete.vim'
+Plug 'prabirshrestha/asyncomplete-lsp.vim'
+Plug 'vim-scripts/vim-gitgutter'
+Plug 'ryanoasis/vim-devicons'
+Plug 'mhinz/vim-startify'
+Plug 'voldikss/vim-floaterm'
+Plug 'mengelbrecht/lightline-bufferline'
+Plug 'drzel/vim-line-no-indicator'
+Plug 'hrsh7th/vim-vsnip'
+Plug 'hrsh7th/vim-vsnip-integ'
+
+call plug#end()
+
+" =============================================================================
+" LIGHTLINE AND LIGHTLINE-BUFFERLINE
+" =============================================================================
+let g:lightline#bufferline#show_number = 1
+let g:lightline#bufferline#enable_devicons = 1
+let g:lightline#bufferline#show_single_buffer = 1
+
+let g:lightline = {
+    \ 'colorscheme' : 'nord',
+    \ 'active' : {
+    \   'left' : [ ['mode', 'paste'], ['gitbranch','readonly', 'filename'] ],
+    \   'right' : [ ['lineinfo'], ['linenoindicator'], ['fileformat'], ['fileencoding'], ['filetype'] ]
+    \ },
+    \ 'component_function' : {
+    \   'filetype': 'MyFiletype',
+    \   'fileformat': 'MyFileformat',
+    \   'filename': 'LightlineFilename',
+    \   'readonly': 'LightLineReadonly',
+    \   'linenoindicator': 'LineNoIndicator',
+    \   'mode': 'LightlineMode',
+    \ },
+    \ 'component_expand': {
+    \   'buffers': 'lightline#bufferline#buffers',
+    \ },
+    \ 'component_type': {
+    \   'buffers': 'tabsel',
+    \ },
+    \ 'tabline': {
+    \   'left': [ ['buffers'] ],
+    \   'right': [ ['currentfunction'] ]
+    \ }
+    \ }
+
+" Functions
+function! LightlineMode()
+  return lightline#mode()
+endfunction
+
+function! MyFiletype()
+  return winwidth(0) > 70 ? (strlen(&filetype) ? &filetype . ' ' . WebDevIconsGetFileTypeSymbol() : 'no ft') : ''
+endfunction
+
+function! MyFileformat()
+  return winwidth(0) > 70 ? (&fileformat . ' ' . WebDevIconsGetFileFormatSymbol()) : ''
+endfunction
+
+function! LightlineFilename()
+  let modified = &modified ? '+' : ''
+  let root = fnamemodify(get(b:, 'git_dir'), ':h')
+  let path = expand('%:p')
+  if path[:len(root)-1] ==# root
+    return path[len(root)+1:] . modified
+  endif
+  return expand('%') . modified
+endfunction
+
+function! LightLineReadonly()
+  if &filetype == "help"
+    return ""
+  elseif &readonly
+    return ""
+  else
+    return ""
+  endif
+endfunction
+
+autocmd BufWritePost,TextChanged,TextChangedI * call lightline#update()
+
+" ============= Custom Keybinds ==============
+map <silent>  <F6> :NERDTreeToggle<CR>
+nmap <C-r> :NERDTreeRefreshRoot<CR>
+map <C-t> :belowright terminal<CR>
+nnoremap <silent> <F5> :FloatermToggle<CR>
+tnoremap <silent> <F5> <C-\><C-n>:FloatermToggle<CR>
+
+" ============== Startify ====================
+let g:startify_change_to_dir = 1 " When opening a file or bookmark, change to its directory
+let g:webdevicons_enable_startify = 1 " Support dev icons in startify
+let g:startify_padding_left = 3 " Padding left
+let g:startify_session_delete_buffers = 1 " Clean buffers
+let g:startify_relative_path = 1
+let g:startify_files_number = 6
+
+let g:startify_custom_header = [
+    \' ',
+    \' ██████╗░░█████╗░██╗░░░░░░█████╗░██████╗░  ██╗░░░██╗██╗███╗░░░███╗ ░░░░░ ░░░  ░░░░░░░░ ',
+    \' ██╔══██╗██╔══██╗██║░░░░░██╔══██╗██╔══██╗  ██║░░░██║██║████╗░████║ ░░░░▄░░░░░░░▄▄▀█▀▄▄░ ',
+    \' ██████╔╝██║░░██║██║░░░░░███████║██████╔╝  ╚██╗░██╔╝██║██╔████╔██║ ░▀▄▀█▀▄▀░░░▄▀▄▀█▀▄▀▄ ',
+    \' ██╔═══╝░██║░░██║██║░░░░░██╔══██║██╔══██╗  ░╚████╔╝░██║██║╚██╔╝██║ ▄█▄█▀█▄█▄░░█▀█▀▄▀█▀█ ',
+    \' ██║░░░░░╚█████╔╝███████╗██║░░██║██║░░██║  ░░╚██╔╝░░██║██║░╚═╝░██║ ░▀▄▀█▀▄▀░░░░█▄▀█▀▄█░ ',
+    \' ╚═╝░░░░░░╚════╝░╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝  ░░░╚═╝░░░╚═╝╚═╝░░░░░╚═╝ ░▀░▀█▀░▀░░░░░░▀▀▀░░░ ',
+    \]
+
+let g:startify_bookmarks = [
+      \ {'b': '~/.bashrc'},
+      \ {'v': '~/.vim/vimrc'},
+      \ ]
+
+let g:startify_lists = [
+      \ { 'type': 'bookmarks', 'header': ["  bookmarks"] },
+      \ { 'type': 'files',     'header': ["  mru files"] },
+      \ { 'type': 'dir',       'header': ["  mru files in " . getcwd()] },
+      \ { 'type': 'commands',  'header': ["  commands"] },
+      \ ]
+
+" Show webdevicons
+function! StartifyEntryFormat()
+  return 'WebDevIconsGetFileTypeSymbol(absolute_path) . " " . entry_path'
+endfunction
+
+colorscheme nord
+
+" =========================================
+"|        Configs                         |
+" =========================================
+set undodir=~/.vim/undodir " Define el path para permitir crear persistencia de `uu` aun si cerramos la sesion
+set undofile " Habilita lo de arriba
+set nobackup " Deshabilita los backups
+set autoindent
+set number " Muestra los números en línea
+set noswapfile " Deshabilita los swamp files de Vim
+set encoding=utf-8 " Definir el tipo de encoding
+set autoread " Permite autoleer los cambios en Vim si fueron hechos de manera externa
+set laststatus=2
+set noshowmode " Elimina el texto del modo actual que se encuentra debajo del lightline
+set fileformat=unix " Define que el formato de archivo será de Unix
+set tabstop=3 " Número de espacios al hacer <tab>
+set relativenumber " Muestra el número relativo en la barra de la línea actual
+set noesckeys " Deshabilita la latencia al momento de presionar esc
+set hidden " Permite mantener un buffer abierto en segundo plano, a pesar de cambiar a otro
+set showmatch " Resalta los [], {}, () que son pares
+set hlsearch " Resalta los resultados de la búsqueda hecha con :/busqueda
+set smartcase " Permite que solo sea case sensitive si en la búsqueda especificamos una mayúscula :/busqueda
+set title " Muestra el path y el nombre del buffer actual en la barra superior de la consola
+set showtabline=2 " Habilita esta opción para mostrar el lightline y lightline-buffer
+set cursorcolumn " Habilita el resaltado de columna (similar al cursorline)
+set cursorline " Muestra una línea en el cursor
+" color nord
+hi CursorLine term=bold cterm=bold guibg=grey40
+
+" Move to file directory when Vim is launched
+autocmd BufEnter * if &buftype == '' | silent! lcd %:p:h | endif
+
+" Configurar updatetime para cursorhold events
+set updatetime=1000
+
+" Autocomandos para checktime
+augroup autoread
+  autocmd!
+  autocmd CursorHold,CursorHoldI * checktime
+  autocmd FocusGained,BufEnter * checktime
+augroup end
+
+" ============================================================================
+" Floaterm
+" =============================================================================
+let g:floaterm_autoclose = 2
+let g:floaterm_title = ' -> $1..$2'
+" let g:floaterm_giteditor = 0
